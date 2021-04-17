@@ -1,0 +1,5 @@
+Nro Vuelo,Origen,Destino,Tipo Asiento,Precio por persona,Fecha ida,Fecha Vuelta
+BOBA-6567,Bogotá,Buenos Aires,Economy,$39.860,01/03/2021,14/03/2021
+TUPI-3369,Tucumán,Puerto Iguazú,Business,$12.530,12/02/2021,23/02/2021
+PIBA-1428,Puerto Iguazú,Bogotá,Business,$43.200,10/02/2021,20/02/2021
+CAME-0321,Cartagena,Medellín,Economy,$7.800,23/01/2021,31/01/2021
