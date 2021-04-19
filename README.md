@@ -8,7 +8,7 @@ HOTEL RESERVATION
 
 2- The previous endpoint accepts the following params: "dateFrom", "dateTo" and "destination". They filter the search according to the user needs
 
-3- You can perform a hotel reservation by making a request to (POST) api/v1/booking. A body object is required, same format of the following example:
+3- You can perform a hotel reservation by making a request to (POST) api/v1/booking. A body object is required, same format as the following example:
 
 {
     "userName" : "seba_gonzalez@unmail.com",
@@ -49,7 +49,7 @@ FLIGHT RESERVATION
 
 2- The previous endpoint accepts the following params: "dateFrom", "dateTo", "origin" and "destination". They filter the search according to the user needs
 
-3- You can perform a flight reservation by making a request to (POST) api/v1/flight-reservation. A body object is required, same format of the following example:
+3- You can perform a flight reservation by making a request to (POST) api/v1/flight-reservation. A body object is required, same format as the following example:
 
 {
     "userName": "arjonamiguel@gmail.com",
