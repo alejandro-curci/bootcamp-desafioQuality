@@ -1,16 +1,10 @@
 package com.desafio.reservas.services;
 
-import com.desafio.reservas.dtos.FlightDTO;
-import com.desafio.reservas.dtos.HotelDTO;
-import com.desafio.reservas.dtos.ResponseFlightDTO;
-import com.desafio.reservas.dtos.ResponseHotelDTO;
+import com.desafio.reservas.dtos.*;
 import com.desafio.reservas.exceptions.FlightException;
-import com.desafio.reservas.exceptions.HotelException;
 import com.desafio.reservas.fixtures.*;
 import com.desafio.reservas.repositories.FlightRepository;
 import com.desafio.reservas.repositories.FlightRespositoryImple;
-import com.desafio.reservas.repositories.HotelRepository;
-import com.desafio.reservas.repositories.HotelRepositoryImple;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,6 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.HashMap;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -39,12 +34,10 @@ class FlightServiceImpleTest {
     @DisplayName("List all available flights")
     void listAllFlightsAvailable() throws FlightException {
         Mockito.when(repositoryMock.loadFlights(any())).thenReturn(FlightDTOFixture.defaultFlights());
-        List<FlightDTO> actual = service.listFlightsAvailable("", "", "", "");
-        List<FlightDTO> expected = FlightDTOFixture.defaultFlights();
+        List<FlightFormatDTO> actual = service.listFlightsAvailable(new HashMap<>());
+        List<FlightFormatDTO> expected = FlightDTOFixture.defaultFormattedFlights();
         assertEquals(expected, actual);
     }
-
-    // asd
 
     @Test
     @DisplayName("Parameters validation (1/7)")

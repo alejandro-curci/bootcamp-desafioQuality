@@ -3,6 +3,7 @@ package com.desafio.reservas.services;
 import com.desafio.reservas.dtos.*;
 import com.desafio.reservas.exceptions.FlightException;
 import com.desafio.reservas.repositories.FlightRepository;
+import com.desafio.reservas.utilities.Util;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -10,23 +11,29 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 public class FlightServiceImple implements FlightService {
 
     private FlightRepository repository;
+    private Util util;
 
     public FlightServiceImple(FlightRepository repository) {
         this.repository = repository;
+        this.util = new Util();
     }
 
     // returns available flights according user input
     @Override
-    public List<FlightDTO> listFlightsAvailable(String dateFrom, String dateTo, String origin, String destination) throws FlightException {
+    public List<FlightFormatDTO> listFlightsAvailable(Map<String, String> params) throws FlightException {
+        String dateFrom = params.containsKey("dateFrom") ? params.get("dateFrom") : "";
+        String dateTo = params.containsKey("dateTo") ? params.get("dateTo") : "";
+        String origin = params.containsKey("origin") ? params.get("origin") : "";
+        String destination = params.containsKey("destination") ? params.get("destination") : "";
         validateParameters(dateFrom, dateTo, origin, destination);
         List<FlightDTO> flights = repository.loadFlights("src/main/resources/flightsDB.csv");
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -47,10 +54,29 @@ public class FlightServiceImple implements FlightService {
         if (!destination.isEmpty()) {
             flights.removeIf(f -> !f.getDestination().equalsIgnoreCase(destination));
         }
-        if(flights.isEmpty()) {
+        if (flights.isEmpty()) {
             throw new FlightException("No results for those filters");
         }
-        return flights;
+        List<FlightFormatDTO> flightsResponse = formatFlightList(flights);
+        return flightsResponse;
+    }
+
+    // formats LocalDate and boolean fields to String
+    public List<FlightFormatDTO> formatFlightList(List<FlightDTO> flights) {
+        List<FlightFormatDTO> response = new ArrayList<>();
+        for(FlightDTO f : flights) {
+            FlightFormatDTO flightFormatDTO = new FlightFormatDTO();
+            flightFormatDTO.setFlightNumber(f.getFlightNumber());
+            flightFormatDTO.setOrigin(f.getOrigin());
+            flightFormatDTO.setDestination(f.getDestination());
+            flightFormatDTO.setSeatType(f.getSeatType());
+            flightFormatDTO.setSeatPrice(f.getSeatPrice());
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            flightFormatDTO.setDateFrom(f.getDateFrom().format(formatter));
+            flightFormatDTO.setDateTo(f.getDateTo().format(formatter));
+            response.add(flightFormatDTO);
+        }
+        return response;
     }
 
     // validates user input
@@ -134,7 +160,7 @@ public class FlightServiceImple implements FlightService {
         }
         FlightDTO flightData = flights.get(0);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        if (!validateDates(payload.getFlightReservation().getDateFrom(), payload.getFlightReservation().getDateTo())) {
+        if (!util.validateDates(payload.getFlightReservation().getDateFrom(), payload.getFlightReservation().getDateTo())) {
             throw new FlightException("Dates are not valid.");
         }
         if (!flightData.getDateFrom().isEqual(LocalDate.parse(payload.getFlightReservation().getDateFrom(), formatter))) {
@@ -149,13 +175,13 @@ public class FlightServiceImple implements FlightService {
         if (!flightData.getDestination().equalsIgnoreCase(payload.getFlightReservation().getDestination())) {
             throw new FlightException("The destination is not correct");
         }
-        if(payload.getFlightReservation().getSeats() > 4) {
+        if (payload.getFlightReservation().getSeats() > 4) {
             throw new FlightException("Too many people on the same ticket");
         }
-        if(!flightData.getSeatType().equalsIgnoreCase(payload.getFlightReservation().getSeatType())) {
+        if (!flightData.getSeatType().equalsIgnoreCase(payload.getFlightReservation().getSeatType())) {
             throw new FlightException("The seat type is not correct");
         }
-        if (!validateEmail(payload.getUserName())) {
+        if (!util.validateEmail(payload.getUserName())) {
             throw new FlightException("The email is not valid");
         }
         if (payload.getFlightReservation().getPaymentMethod().getType().equalsIgnoreCase("debit")) {
@@ -163,38 +189,6 @@ public class FlightServiceImple implements FlightService {
                 throw new FlightException("You cannot pay in many dues with DEBIT");
             }
         }
-    }
-
-    // validates date format
-    public boolean validateDates(String dateFrom, String dateTo) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        LocalDate dateFromLocal = null;
-        LocalDate dateToLocal = null;
-        try {
-            dateFromLocal = LocalDate.parse(dateFrom, formatter);
-        } catch (DateTimeParseException e) {
-            return false;
-        }
-        try {
-            dateToLocal = LocalDate.parse(dateTo, formatter);
-        } catch (DateTimeParseException e) {
-            return false;
-        }
-        if (dateFromLocal.isAfter(dateToLocal)) {
-            return false;
-        }
-        return true;
-    }
-
-    // validates email
-    public boolean validateEmail(String email) {
-        String regex = "^[A-Za-z0-9+_.-]+@(.+)$";
-        Pattern p = Pattern.compile(regex);
-        if (email.isEmpty()) {
-            return false;
-        }
-        Matcher m = p.matcher(email);
-        return m.matches();
     }
 
     // creates the object required to send to the controller
@@ -205,7 +199,7 @@ public class FlightServiceImple implements FlightService {
         double amount = calculateAmount(payload.getFlightReservation());
         BigDecimal bdAmount = new BigDecimal(amount).setScale(2, RoundingMode.HALF_UP);
         response.setAmount(bdAmount.doubleValue());
-        response.setInterest(getInterest(payload.getFlightReservation()));
+        response.setInterest(util.getInterest(payload.getFlightReservation().getPaymentMethod()));
         // round total up to 2 decimals
         double total = response.getAmount() * (1 + response.getInterest() / 100);
         BigDecimal bdTotal = new BigDecimal(total).setScale(2, RoundingMode.HALF_UP);
@@ -220,22 +214,6 @@ public class FlightServiceImple implements FlightService {
         List<FlightDTO> flights = repository.loadFlights("src/main/resources/flightsDB.csv");
         flights.removeIf(f -> !f.getFlightNumber().equalsIgnoreCase(reservation.getFlightNumber()));
         return flights.get(0).getSeatPrice() * reservation.getSeats();
-    }
-
-    // decides the interest to apply according to the amount of dues
-    public double getInterest(FlightReservationDTO reservation) {
-        if (reservation.getPaymentMethod().getType().equalsIgnoreCase("debit")) {
-            return 0.0;
-        } else {
-            int dues = reservation.getPaymentMethod().getDues();
-            if (dues <= 3) {
-                return 5.0;
-            } else if (dues <= 6) {
-                return 10.0;
-            } else {
-                return 15.0;
-            }
-        }
     }
 
     // FlightReservationResponseDTO has every same field from FlightReservationDTO but the methodPayment

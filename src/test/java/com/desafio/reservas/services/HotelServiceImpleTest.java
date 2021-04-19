@@ -1,7 +1,7 @@
 package com.desafio.reservas.services;
 
 import com.desafio.reservas.dtos.BookingResponseDTO;
-import com.desafio.reservas.dtos.HotelDTO;
+import com.desafio.reservas.dtos.HotelFormatDTO;
 import com.desafio.reservas.dtos.ResponseHotelDTO;
 import com.desafio.reservas.exceptions.HotelException;
 import com.desafio.reservas.fixtures.BookingDTOFixture;
@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.any;
 
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.HashMap;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -40,8 +41,8 @@ class HotelServiceImpleTest {
     @DisplayName("List all available hotels")
     void listAllHotelsAvailable() throws HotelException {
         Mockito.when(repositoryMock.loadHotels(any())).thenReturn(HotelDTOFixture.defaultHotels());
-        List<HotelDTO> actual = service.listHotelsAvailable("", "", "");
-        List<HotelDTO> expected = HotelDTOFixture.defaultAvailableHotels();
+        List<HotelFormatDTO> actual = service.listHotelsAvailable(new HashMap<>());
+        List<HotelFormatDTO> expected = HotelDTOFixture.defaultAvailableHotels();
         assertEquals(expected, actual);
     }
 
@@ -190,27 +191,6 @@ class HotelServiceImpleTest {
     }
 
     @Test
-    @DisplayName("Valid email")
-    void validEmail() {
-        boolean actual = service.validateEmail("pepito@yahoo.com");
-        assertEquals(true, actual);
-    }
-
-    @Test
-    @DisplayName("Invalid email")
-    void invalidEmail() {
-        boolean actual = service.validateEmail("pepito-yahoo.com.ar");
-        assertEquals(false, actual);
-    }
-
-    @Test
-    @DisplayName("Empty email")
-    void emptyEmail() {
-        boolean actual = service.validateEmail("");
-        assertEquals(false, actual);
-    }
-
-    @Test
     @DisplayName("Valid Room (1/4)")
     void successfulTypeRoom1() throws HotelException {
         boolean actual = service.validateRoom(1, "single");
@@ -252,36 +232,8 @@ class HotelServiceImpleTest {
     }
 
     @Test
-    @DisplayName("Valid dates")
-    void successfulValidation() {
-        boolean actual = service.validateDates("15/08/2020", "22/10/2020");
-        assertEquals(true, actual);
-    }
-
-    @Test
-    @DisplayName("Invalid dates (1/3)")
-    void validateWrongFormat1() {
-        boolean actual = service.validateDates("15/8/2020", "22/10/2020");
-        assertEquals(false, actual);
-    }
-
-    @Test
-    @DisplayName("Invalid dates (2/3)")
-    void validateWrongFormat2() {
-        boolean actual = service.validateDates("15/08/2020", "22-10-2020");
-        assertEquals(false, actual);
-    }
-
-    @Test
-    @DisplayName("Invalid dates (3/3)")
-    void validateWrongFormat3() {
-        boolean actual = service.validateDates("15/08/2020", "05/02/2020");
-        assertEquals(false, actual);
-    }
-
-    @Test
     @DisplayName("Create object ResponseDTO")
-    void createResponseDTOsuccessfully() {
+    void createResponseDTOsuccessfully() throws HotelException {
         Mockito.when(repositoryMock.loadHotels(any())).thenReturn(HotelDTOFixture.defaultHotels());
         ResponseHotelDTO actual = service.createResponseDTO(PayloadDTOFixture.defaultHotelPayloadDTO(BookingDTOFixture.defaultBookingDTO()));
         ResponseHotelDTO expected = ResponseHotelDTOFixture.defaultResponseDTO();
@@ -294,13 +246,6 @@ class HotelServiceImpleTest {
         Mockito.when(repositoryMock.loadHotels(any())).thenReturn(HotelDTOFixture.defaultHotels());
         double actual = service.calculateAmount(BookingDTOFixture.defaultBookingDTO());
         assertEquals(54350, actual);
-    }
-
-    @Test
-    @DisplayName("Get the right interest")
-    void getInterest() {
-        double actual = service.getInterest(BookingDTOFixture.defaultBookingDTO());
-        assertEquals(10, actual);
     }
 
     @Test

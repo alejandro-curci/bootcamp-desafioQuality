@@ -1,9 +1,7 @@
 package com.desafio.reservas.repositories;
 
 import com.desafio.reservas.dtos.FlightDTO;
-import com.desafio.reservas.dtos.HotelDTO;
 import com.desafio.reservas.fixtures.FlightDTOFixture;
-import com.desafio.reservas.fixtures.HotelDTOFixture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

@@ -20,6 +20,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.util.HashMap;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,9 +39,9 @@ class HotelControllerTest {
     @Test
     @DisplayName("List all hotels")
     void listAllHotels() throws HotelException {
-        Mockito.when(serviceMock.listHotelsAvailable(any(), any(), any())).thenReturn(HotelDTOFixture.defaultHotels());
-        ResponseEntity actual = controller.listHotels("", "", "");
-        ResponseEntity expected = new ResponseEntity(HotelDTOFixture.defaultHotels(), HttpStatus.OK);
+        Mockito.when(serviceMock.listHotelsAvailable(any())).thenReturn(HotelDTOFixture.defaultAvailableHotels());
+        ResponseEntity actual = controller.listHotels(new HashMap<>());
+        ResponseEntity expected = new ResponseEntity(HotelDTOFixture.defaultAvailableHotels(), HttpStatus.OK);
         assertEquals(expected, actual);
     }
 

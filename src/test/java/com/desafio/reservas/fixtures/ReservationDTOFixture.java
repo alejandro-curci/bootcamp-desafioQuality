@@ -1,6 +1,5 @@
 package com.desafio.reservas.fixtures;
 
-import com.desafio.reservas.dtos.BookingResponseDTO;
 import com.desafio.reservas.dtos.FlightReservationDTO;
 import com.desafio.reservas.dtos.FlightReservationResponseDTO;
 import com.desafio.reservas.dtos.UserDTO;
@@ -181,7 +180,7 @@ public class ReservationDTOFixture {
         reservation.setPaymentMethod(PaymentDTOFixture.defaultCreditPayment());
         return reservation;
     }
-    
+
     public static FlightReservationResponseDTO defaultFlightReservationResponseDTO() {
         FlightReservationResponseDTO reservation = new FlightReservationResponseDTO();
         reservation.setFlightNumber("PIBA-1428");

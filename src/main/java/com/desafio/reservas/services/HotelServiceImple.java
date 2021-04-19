@@ -3,6 +3,7 @@ package com.desafio.reservas.services;
 import com.desafio.reservas.dtos.*;
 import com.desafio.reservas.exceptions.HotelException;
 import com.desafio.reservas.repositories.HotelRepository;
+import com.desafio.reservas.utilities.Util;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -11,23 +12,28 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 public class HotelServiceImple implements HotelService {
 
     private HotelRepository repository;
+    private Util util;
 
     public HotelServiceImple(HotelRepository repository) {
         this.repository = repository;
+        this.util = new Util();
     }
 
     // returns available hotels according to the filters
     @Override
-    public List<HotelDTO> listHotelsAvailable(String dateFrom, String dateTo, String destination) throws HotelException {
+    public List<HotelFormatDTO> listHotelsAvailable(Map<String, String> params) throws HotelException {
+        String dateFrom = params.containsKey("dateFrom") ? params.get("dateFrom") : "";
+        String dateTo = params.containsKey("dateTo") ? params.get("dateTo") : "";
+        String destination = params.containsKey("destination") ? params.get("destination") : "";
         validateParameters(dateFrom, dateTo, destination);
         List<HotelDTO> hotels = repository.loadHotels("src/main/resources/hotelsDB.csv");
         hotels.removeIf(h -> h.isReserved());
@@ -43,7 +49,31 @@ public class HotelServiceImple implements HotelService {
         if (!destination.isEmpty()) {
             hotels.removeIf(h -> !h.getCity().equalsIgnoreCase(destination));
         }
-        return hotels;
+        List<HotelFormatDTO> hotelsResponse = formatHotelList(hotels);
+        return hotelsResponse;
+    }
+
+    // formats LocalDate and boolean fields to String
+    public List<HotelFormatDTO> formatHotelList(List<HotelDTO> hotels) {
+        List<HotelFormatDTO> response = new ArrayList<>();
+        for(HotelDTO h : hotels) {
+            HotelFormatDTO hotelFormatDTO = new HotelFormatDTO();
+            hotelFormatDTO.setHotelCode(h.getHotelCode());
+            hotelFormatDTO.setName(h.getName());
+            hotelFormatDTO.setCity(h.getCity());
+            hotelFormatDTO.setRoomType(h.getRoomType());
+            hotelFormatDTO.setPrice(h.getPrice());
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            hotelFormatDTO.setAvailableFrom(h.getAvailableFrom().format(formatter));
+            hotelFormatDTO.setAvailableTo(h.getAvailableTo().format(formatter));
+            if(h.isReserved()) {
+                hotelFormatDTO.setReserved("Yes");
+            } else {
+                hotelFormatDTO.setReserved("No");
+            }
+            response.add(hotelFormatDTO);
+        }
+        return response;
     }
 
     // validates user input
@@ -120,7 +150,7 @@ public class HotelServiceImple implements HotelService {
             throw new HotelException("The hotel is already reserved");
         }
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        if (!validateDates(payload.getBooking().getDateFrom(), payload.getBooking().getDateTo())) {
+        if (!util.validateDates(payload.getBooking().getDateFrom(), payload.getBooking().getDateTo())) {
             throw new HotelException("Dates are not valid.");
         }
         if (hotelData.getAvailableFrom().isAfter(LocalDate.parse(payload.getBooking().getDateFrom(), formatter))) {
@@ -136,7 +166,7 @@ public class HotelServiceImple implements HotelService {
         if (!roomCondition) {
             throw new HotelException("The amount of people does not match the type of room");
         }
-        if (!validateEmail(payload.getUserName())) {
+        if (!util.validateEmail(payload.getUserName())) {
             throw new HotelException("The email is not valid");
         }
         if (payload.getBooking().getPaymentMethod().getType().equalsIgnoreCase("debit")) {
@@ -144,17 +174,6 @@ public class HotelServiceImple implements HotelService {
                 throw new HotelException("You cannot pay in many dues with DEBIT");
             }
         }
-    }
-
-    // validates email
-    public boolean validateEmail(String email) {
-        String regex = "^[A-Za-z0-9+_.-]+@(.+)$";
-        Pattern p = Pattern.compile(regex);
-        if (email.isEmpty()) {
-            return false;
-        }
-        Matcher m = p.matcher(email);
-        return m.matches();
     }
 
     // validates the amount of people and type of room
@@ -172,43 +191,34 @@ public class HotelServiceImple implements HotelService {
         }
     }
 
-    // validates correct format and correct time line (dateFrom before dateTo)
-    public boolean validateDates(String dateFrom, String dateTo) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        LocalDate dateFromLocal = null;
-        LocalDate dateToLocal = null;
-        try {
-            dateFromLocal = LocalDate.parse(dateFrom, formatter);
-        } catch (DateTimeParseException e) {
-            return false;
-        }
-        try {
-            dateToLocal = LocalDate.parse(dateTo, formatter);
-        } catch (DateTimeParseException e) {
-            return false;
-        }
-        if (dateFromLocal.isAfter(dateToLocal)) {
-            return false;
-        }
-        return true;
-    }
-
     // creates the object required to send to the controller
-    public ResponseHotelDTO createResponseDTO(PayloadHotelDTO payload) {
+    public ResponseHotelDTO createResponseDTO(PayloadHotelDTO payload) throws HotelException {
         ResponseHotelDTO response = new ResponseHotelDTO();
         response.setUserName(payload.getUserName());
         // round amount up to 2 decimals
         double amount = calculateAmount(payload.getBooking());
         BigDecimal bdAmount = new BigDecimal(amount).setScale(2, RoundingMode.HALF_UP);
         response.setAmount(bdAmount.doubleValue());
-        response.setInterest(getInterest(payload.getBooking()));
+        response.setInterest(util.getInterest(payload.getBooking().getPaymentMethod()));
         // round total up to 2 decimals
         double total = response.getAmount() * (1 + response.getInterest() / 100);
         BigDecimal bdTotal = new BigDecimal(total).setScale(2, RoundingMode.HALF_UP);
         response.setTotal(bdTotal.doubleValue());
         response.setBooking(getBookingResponse(payload.getBooking()));
         response.setStatusCode(new StatusDTO(200, "El proceso termino satisfactoriamente"));
+        persistHotelReservation(response.getBooking().getHotelCode());
         return response;
+    }
+
+    // updates csv file with the new reservation
+    public void persistHotelReservation(String hotelCode) throws HotelException {
+        List<HotelDTO> hotels = repository.loadHotels("src/main/resources/hotelsDB.csv");
+        for(HotelDTO h : hotels) {
+            if(h.getHotelCode().equals(hotelCode)) {
+                h.setReserved(true);
+            }
+        }
+        repository.saveReservation(hotels, "src/main/resources/hotelsDB.csv");
     }
 
     // calculates the amount to pay according to amount of nights and the price per night
@@ -221,22 +231,6 @@ public class HotelServiceImple implements HotelService {
         hotels.removeIf(h -> !h.getHotelCode().equalsIgnoreCase(booking.getHotelCode()));
         double price = hotels.get(0).getPrice();
         return nightsReserved * price;
-    }
-
-    // decides the interest to apply according to the amount of dues
-    public double getInterest(BookingDTO booking) {
-        if (booking.getPaymentMethod().getType().equalsIgnoreCase("debit")) {
-            return 0.0;
-        } else {
-            int dues = booking.getPaymentMethod().getDues();
-            if (dues <= 3) {
-                return 5.0;
-            } else if (dues <= 6) {
-                return 10.0;
-            } else {
-                return 15.0;
-            }
-        }
     }
 
     // BookingResponseDTO has every same field from BookingDTO but the methodPayment

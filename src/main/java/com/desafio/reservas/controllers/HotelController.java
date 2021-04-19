@@ -8,8 +8,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
-@RequestMapping("/api/v1")
 public class HotelController {
 
     private HotelService service;
@@ -19,10 +20,8 @@ public class HotelController {
     }
 
     @GetMapping("/hotels")
-    public ResponseEntity listHotels(@RequestParam(required = false, defaultValue = "") String dateFrom,
-                                     @RequestParam(required = false, defaultValue = "") String dateTo,
-                                     @RequestParam(required = false, defaultValue = "") String destination) throws HotelException {
-        return new ResponseEntity(service.listHotelsAvailable(dateFrom, dateTo, destination), HttpStatus.OK);
+    public ResponseEntity listHotels(@RequestParam(required = false) Map<String, String> params) throws HotelException {
+        return new ResponseEntity(service.listHotelsAvailable(params), HttpStatus.OK);
     }
 
     @PostMapping("/booking")

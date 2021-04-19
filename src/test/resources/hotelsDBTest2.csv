@@ -1,0 +1,5 @@
+Código Hotel,Nombre,Lugar/Ciudad,Tipo de Habitación,Precio por noche,Disponible Desde,Disponible hasta,Reservado
+CH-0002,Cataratas Hotel,Puerto Iguazú,Doble,$6300,10/02/2021,20/03/2021,NO
+BG-0004,Bocagrande,Cartagena,Múltiple,$9370,17/04/2021,12/06/2021,SI
+SH-0001,Sheraton 2,Tucumán,Single,$4150,02/01/2021,19/02/2021,NO
+HB-0001,Hotel Bristol,Buenos Aires,Single,$5435,10/02/2021,19/03/2021,NO

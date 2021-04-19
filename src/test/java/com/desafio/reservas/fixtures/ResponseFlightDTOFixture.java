@@ -1,7 +1,6 @@
 package com.desafio.reservas.fixtures;
 
 import com.desafio.reservas.dtos.ResponseFlightDTO;
-import com.desafio.reservas.dtos.ResponseHotelDTO;
 import com.desafio.reservas.dtos.StatusDTO;
 
 public class ResponseFlightDTOFixture {

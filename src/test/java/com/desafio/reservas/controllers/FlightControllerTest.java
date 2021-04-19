@@ -15,6 +15,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.util.HashMap;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 
@@ -33,10 +35,10 @@ class FlightControllerTest {
     @Test
     @DisplayName("List all flights")
     void listAllFlights() throws FlightException {
-        Mockito.when(serviceMock.listFlightsAvailable(any(), any(), any(), any()))
-                .thenReturn(FlightDTOFixture.defaultFlights());
-        ResponseEntity actual = controller.listFlights("", "", "", "");
-        ResponseEntity expected = new ResponseEntity(FlightDTOFixture.defaultFlights(), HttpStatus.OK);
+        Mockito.when(serviceMock.listFlightsAvailable(any()))
+                .thenReturn(FlightDTOFixture.defaultFormattedFlights());
+        ResponseEntity actual = controller.listFlights(new HashMap<>());
+        ResponseEntity expected = new ResponseEntity(FlightDTOFixture.defaultFormattedFlights(), HttpStatus.OK);
         assertEquals(expected, actual);
     }
 
